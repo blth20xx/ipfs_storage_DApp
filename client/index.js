@@ -32,6 +32,18 @@ const chooseFileElement = document.getElementById("chooseFile");
 const submitFileElement = document.getElementById("submitFile");
 const getFileElement = document.getElementById("getFile");
 const wantedFileElement = document.getElementById("wantedFile");
+const file2DeleteElement = document.getElementById("file2Delete");
+const deleteFileElement = document.getElementById("deleteFile");
+
+// Función para descargar el documento al equipo desde IPFS
+function download(cid) {
+  const a = document.createElement("a");
+  a.href = `${cid}.ipfs.w3s.link/${wantedFileElement.value}`;
+  a.download = wantedFileElement.value;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 
 // Función que guarda en el buffer de subida el archivo seleccionado
 // Se activa tras seleccionar el archivo con el botón "Choose file"
@@ -48,6 +60,7 @@ async function putFileToIPFS() {
   await contract.methods
     .store(cid, uploadFiles[0].name)
     .send({ from: account, gas: 500000 });
+  console.log("File submitted!");
   uploadFiles = [];
 }
 
@@ -57,20 +70,32 @@ async function retrieveFileFromIPFS() {
   var cid = await contract.methods
     .retrieve(wantedFileElement.value)
     .call({ from: account, gas: 500000 });
-  console.log(cid);
+  console.log("Retrieving file...");
+  //download(cid);
   const response = await storage.get(cid);
   if (!response.ok) {
-    throw new Error("No se ha podido obtener el archivo con cid ${cid}");
+    throw new Error(
+      `No se ha podido obtener el archivo ${wantedFileElement.value}`
+    );
   }
   const files = await response.files();
   retrievedFiles.push(files);
   console.log(retrievedFiles);
 }
 
+// Función para borrar el identificador de un fichero en el contrato
+async function deleteFile() {
+  await contract.methods
+    .clear(file2DeleteElement.value)
+    .send({ from: account, gas: 500000 });
+  console.log(`${file2DeleteElement.value}'s cid deleted from contract`);
+}
+
 // Declaración de los listeners para cuando el usuario pulse cada uno de los botones
 chooseFileElement.addEventListener("change", prepareFiles, false);
 submitFileElement.addEventListener("click", putFileToIPFS, false);
 getFileElement.addEventListener("click", retrieveFileFromIPFS, false);
+deleteFileElement.addEventListener("click", deleteFile, false);
 
 async function main() {
   account = (await web3.eth.getAccounts())[0]; // Obtención de una de las cuentas de la blockchain de ganache para poder pagar los costes con ella

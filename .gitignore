@@ -1,1 +1,2 @@
-client/.parcel-cache
+/client/dist
+/client/.parcel-cache
