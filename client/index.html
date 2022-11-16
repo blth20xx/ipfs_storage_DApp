@@ -11,19 +11,29 @@
   <body>
     <script type="module" src="index.js"></script>
     <nav class="navbar navbar-dark bg-primary">
-      <h2>DocsResort</h2>
+      <h1>DocsResort</h1>
     </nav>
 
     <div class="container" style="margin-top: 15px; margin-left: 10px">
-      <form>
-        <!-- <button onclick="document.getElementById('chooseFile').click()">Seleccionar documento</button> -->
-        <input type="file" id="chooseFile" accept=".pdf, .doc, .docx"></input>
-        <input type="button" id="submitFile" value="Submit"></input>
-      </form>
+      <div>
+        <h3 style="color: black;">Subida de documentos</h3>
+        <form>
+          <!-- <button onclick="document.getElementById('chooseFile').click()">Seleccionar documento</button> -->
+          <input type="file" id="chooseFile" accept=".pdf, .doc, .docx"></input>
+          <input type="button" id="submitFile" value="Submit"></input>
+        </form>
+      </div>
       <br><br>
       <div>
+        <h3 style="color: black;">Descarga de documentos</h3>
         <input type="text" id="wantedFile">
-        <button id="getFile">Get file</button>
+        <button id="getFile">Get File</button>
+      </div>
+      <br><br>
+      <div>
+        <h3 style="color: black;">Borrar fichero (en contrato)</h3>
+        <input type="text" id="file2Delete">
+        <button id="deleteFile">Delete File</button>
       </div>
     </div>
 
