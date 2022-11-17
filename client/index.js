@@ -36,13 +36,22 @@ const file2DeleteElement = document.getElementById("file2Delete");
 const deleteFileElement = document.getElementById("deleteFile");
 
 // Función para descargar el documento al equipo desde IPFS
-function download(cid) {
-  const a = document.createElement("a");
-  a.href = `${cid}.ipfs.w3s.link/${wantedFileElement.value}`;
-  a.download = wantedFileElement.value;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function downloadToSystem(cid) {
+  var url = `https://${cid}.ipfs.w3s.link/${wantedFileElement.value}`;
+  window.open(url);
+}
+
+// Función para descargar el documento a la consola del navegador desde IPFS
+async function downloadToBrowser(cid) {
+  const response = await storage.get(cid);
+  if (!response.ok) {
+    throw new Error(
+      `No se ha podido obtener el archivo ${wantedFileElement.value}`
+    );
+  }
+  const files = await response.files();
+  retrievedFiles.push(files);
+  console.log(retrievedFiles);
 }
 
 // Función que guarda en el buffer de subida el archivo seleccionado
@@ -71,16 +80,8 @@ async function retrieveFileFromIPFS() {
     .retrieve(wantedFileElement.value)
     .call({ from: account, gas: 500000 });
   console.log("Retrieving file...");
-  //download(cid);
-  const response = await storage.get(cid);
-  if (!response.ok) {
-    throw new Error(
-      `No se ha podido obtener el archivo ${wantedFileElement.value}`
-    );
-  }
-  const files = await response.files();
-  retrievedFiles.push(files);
-  console.log(retrievedFiles);
+  downloadToSystem(cid);
+  //downloadToBrowser(cid);
 }
 
 // Función para borrar el identificador de un fichero en el contrato
