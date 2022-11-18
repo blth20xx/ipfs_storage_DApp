@@ -37,6 +37,11 @@ const deleteFileElement = document.getElementById("deleteFile");
 
 // Función para descargar el documento al equipo desde IPFS
 function downloadToSystem(cid) {
+  if (cid == "") {
+    throw new Error(
+      `No se ha podido obtener el archivo ${wantedFileElement.value}`
+    );
+  }
   var url = `https://${cid}.ipfs.w3s.link/${wantedFileElement.value}`;
   window.open(url);
 }
@@ -67,7 +72,7 @@ async function putFileToIPFS() {
   console.log("Submitting file to IPFS...");
   var cid = await storage.put(uploadFiles);
   await contract.methods
-    .store(cid, uploadFiles[0].name)
+    .store(uploadFiles[0].name, cid)
     .send({ from: account, gas: 500000 });
   console.log("File submitted!");
   uploadFiles = [];
