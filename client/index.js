@@ -20,8 +20,9 @@ const web3 = new Web3(provider);
 // Instanciación del contrato con sus parámetros de conexión
 const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 
-// Cuenta en la blockchain con la que se pagarán los costes del contrato
-var account;
+// Variables para guardar las cuentas disponibles en la blockchain
+var accounts;
+var chosenAccount;
 
 // Declaración de los buffers de subida y descarga de archivos
 var uploadFiles = [];
@@ -34,6 +35,7 @@ const getFileElement = document.getElementById("getFile");
 const wantedFileElement = document.getElementById("wantedFile");
 const file2DeleteElement = document.getElementById("file2Delete");
 const deleteFileElement = document.getElementById("deleteFile");
+const selectAccountElement = document.getElementById("select");
 
 // Función para descargar el documento al equipo desde IPFS
 function downloadToSystem(cid) {
@@ -73,7 +75,7 @@ async function putFileToIPFS() {
   var cid = await storage.put(uploadFiles);
   await contract.methods
     .store(uploadFiles[0].name, cid)
-    .send({ from: account, gas: 500000 });
+    .send({ from: chosenAccount, gas: 500000 });
   console.log("File submitted!");
   uploadFiles = [];
 }
@@ -83,7 +85,7 @@ async function putFileToIPFS() {
 async function retrieveFileFromIPFS() {
   var cid = await contract.methods
     .retrieve(wantedFileElement.value)
-    .call({ from: account, gas: 500000 });
+    .call({ from: chosenAccount, gas: 500000 });
   console.log("Retrieving file...");
   downloadToSystem(cid);
   //downloadToBrowser(cid);
@@ -93,8 +95,13 @@ async function retrieveFileFromIPFS() {
 async function deleteFile() {
   await contract.methods
     .clear(file2DeleteElement.value)
-    .send({ from: account, gas: 500000 });
+    .send({ from: chosenAccount, gas: 500000 });
   console.log(`${file2DeleteElement.value}'s cid deleted from contract`);
+}
+
+// Cambia la cuenta activa cuando se selecciona otra distinta en el selector
+function changeAccount() {
+  chosenAccount = accounts[selectAccountElement.selectedIndex - 1];
 }
 
 // Declaración de los listeners para cuando el usuario pulse cada uno de los botones
@@ -102,9 +109,13 @@ chooseFileElement.addEventListener("change", prepareFiles, false);
 submitFileElement.addEventListener("click", putFileToIPFS, false);
 getFileElement.addEventListener("click", retrieveFileFromIPFS, false);
 deleteFileElement.addEventListener("click", deleteFile, false);
+selectAccountElement.addEventListener("change", changeAccount, false);
 
 async function main() {
-  account = (await web3.eth.getAccounts())[0]; // Obtención de una de las cuentas de la blockchain de ganache para poder pagar los costes con ella
+  accounts = await web3.eth.getAccounts(); // Obtención de una de las cuentas de la blockchain de ganache para poder pagar los costes con ella
+  for (let i = 0; i < 5; i++) {
+    selectAccountElement.options[i + 1].innerHTML = accounts[i];
+  }
 }
 
 main();
