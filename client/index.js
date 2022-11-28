@@ -101,7 +101,11 @@ async function deleteFile() {
 
 // Cambia la cuenta activa cuando se selecciona otra distinta en el selector
 function changeAccount() {
-  chosenAccount = accounts[selectAccountElement.selectedIndex - 1];
+  var index = selectAccountElement.selectedIndex;
+  if (index > 0) {
+    index--;
+  }
+  chosenAccount = accounts[index];
 }
 
 // Declaración de los listeners para cuando el usuario pulse cada uno de los botones
