@@ -23,10 +23,6 @@ contract storageIndexing {
         return files[_filename].cid;
     }
 
-    /* function getOwner(string calldata _filename) public view returns (address owner) {
-        return files[_filename].owner;
-    } */
-
     function clear(string calldata _filename) public onlyOwner(_filename) {
         files[_filename].cid = "";
         files[_filename].owner = 0x0000000000000000000000000000000000000000;
