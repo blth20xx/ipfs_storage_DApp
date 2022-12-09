@@ -22,8 +22,10 @@ const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 
 /* Variables para guardar las cuentas disponibles en la blockchain */
 var accounts = [];
-var chosenAccount;
-var chosenAccountIndex;
+var chosenAccount = {
+  address: "",
+  files: [],
+};
 
 /* Declaración de los buffers de subida y descarga de archivos */
 var uploadFiles = [];
@@ -47,55 +49,42 @@ function downloadToSystem(cid, filename) {
   window.open(url);
 }
 
-/* Función para descargar el documento a la consola del navegador desde IPFS */
-async function downloadToBrowser(cid) {
-  const response = await storage.get(cid);
-
-  if (!response.ok) {
-    throw new Error(
-      `No se ha podido obtener el archivo ${wantedFileElement.value}`
-    );
-  }
-  const files = await response.files();
-  retrievedFiles.push(files);
-  console.log(retrievedFiles);
-}
-
 /* Función para mostrar en la tabla los documentos de cada cuenta */
-function renderDataInTheTable(filename) {
+function renderDataInTheTable(file) {
   const tableBody = document.getElementById("docsTable");
 
   let newRow = document.createElement("tr");
   let nameCell = document.createElement("td");
   let dwCell = document.createElement("td");
   let dwButton = document.createElement("button");
-  let rmCell = document.createElement("td");
-  let rmButton = document.createElement("button");
+  /* let rmCell = document.createElement("td");
+  let rmButton = document.createElement("button"); */
 
-  nameCell.innerText = filename;
+  nameCell.innerText = file.name;
 
   dwButton.innerHTML = "Get File";
   dwButton.className = "btn btn-outline-success";
   dwButton.addEventListener("click", retrieveFileFromIPFS, false);
-  dwButton.value = nameCell.innerText;
+  dwButton.cid = file.cid;
+  dwButton.filename = file.name;
   dwCell.appendChild(dwButton);
 
-  rmButton.innerHTML = "Delete File";
+  /* rmButton.innerHTML = "Delete File";
   rmButton.className = "btn btn-outline-danger";
   rmButton.addEventListener("click", deleteFile, false);
   rmButton.value = nameCell.innerText;
-  rmCell.appendChild(rmButton);
+  rmCell.appendChild(rmButton); */
 
   newRow.appendChild(nameCell);
   newRow.appendChild(dwCell);
-  newRow.appendChild(rmCell);
+  //newRow.appendChild(rmCell);
   tableBody.appendChild(newRow);
 }
 
 /* Funcion para mostrar todos los documentos de una cuenta en la tabla */
 function renderFullTable() {
-  for (let i = 0; i < accounts[chosenAccountIndex].files.length; i++) {
-    renderDataInTheTable(accounts[chosenAccountIndex].files[i]);
+  for (let i = 0; i < chosenAccount.files.length; i++) {
+    renderDataInTheTable(chosenAccount.files[i]);
   }
 }
 
@@ -118,7 +107,7 @@ function prepareFiles() {
 
 /* Función para añadir un fichero a una cuenta conforme se sube */
 function addFileToAccount() {
-  accounts[chosenAccountIndex].files.push(uploadFiles[0].name);
+  chosenAccount.files.push(uploadFiles[0]);
 }
 
 /* Función encargada de subir el archivo al servicio IPFS y de guardar el identificador recibido en el smart contract
@@ -126,56 +115,63 @@ function addFileToAccount() {
 async function putFileToIPFS() {
   console.log("Submitting file to IPFS...");
   var cid = await storage.put(uploadFiles);
+  for (let i = 0; i < chosenAccount.files.length; i++) {
+    if (cid === chosenAccount.files[i].cid) {
+      alert("ERROR: el archivo ya existe");
+      throw new Error("El archivo ya existe");
+    }
+  }
   await contract.methods
     .store(uploadFiles[0].name, cid)
-    .send({ from: chosenAccount, gas: 500000 });
+    .send({ from: chosenAccount.address, gas: 500000 });
   alert("File submitted!");
   addFileToAccount();
-  renderDataInTheTable(uploadFiles[0].name);
+  renderDataInTheTable(uploadFiles[0].name, cid);
   uploadFiles = [];
 }
 
 /* Función encargada de recuperar el identificador de un fichero desde el smart contract para después descargarlo desde el sevicio IPFS
   Se activa con el botón "Get file" */
 async function retrieveFileFromIPFS(evt) {
-  var cid = await contract.methods
-    .retrieve(evt.target.value)
-    .call({ from: chosenAccount, gas: 500000 });
   console.log("Retrieving file...");
-  downloadToSystem(cid, evt.target.value);
-  //downloadToBrowser(cid);
+  downloadToSystem(evt.target.cid, evt.target.filename);
 }
 
-async function retrieveAllFilesFromIPFS() {
+async function retrieveAll() {
   var files = await contract.methods
     .retrieveAll()
-    .call({ from: chosenAccount, gas: 500000 });
-  console.log(files);
+    .call({ from: chosenAccount.address, gas: 500000 });
+
+  return files;
 }
 
 /* Función para borrar el identificador de un fichero en el contrato */
-async function deleteFile(evt) {
+/* async function deleteFile(evt) {
   await contract.methods
     .clear(evt.target.value)
     .send({ from: chosenAccount, gas: 500000 });
   console.log(`${evt.target.value}'s cid deleted from contract`);
-  let index = accounts[chosenAccountIndex].files.indexOf(evt.target.value);
+  let index = chosenAccount.files.indexOf(evt.target.value);
   document.getElementById("docsTable").deleteRow(index);
-  accounts[chosenAccountIndex].files.splice(index, 1);
-}
+  chosenAccount.files.splice(index, 1);
+} */
 
 /* Cambia la cuenta activa cuando se selecciona otra distinta en el selector */
-function changeAccount() {
+async function changeAccount() {
   var index = selectAccountElement.selectedIndex;
 
-  if (index > 0) {
-    index--;
+  if (document.getElementById("uploadDiv").hidden) {
+    selectAccountElement.remove(0);
+    document.getElementById("uploadDiv").hidden = false;
+    if (index > 0) {
+      index--;
+    }
   }
-  chosenAccount = accounts[index].address;
-  chosenAccountIndex = index;
+
   clearTable();
+  chosenAccount.address = accounts[index];
+  chosenAccount.files = await retrieveAll();
   renderFullTable();
-  retrieveAllFilesFromIPFS();
 }
 
 /* Declaración de los listeners para cuando el usuario pulse cada uno de los botones */
@@ -186,21 +182,11 @@ deleteFileElement.addEventListener("click", deleteFile, false);
 selectAccountElement.addEventListener("change", changeAccount, false);
 
 async function main() {
-  var foundAccounts = await web3.eth.getAccounts();
+  accounts = await web3.eth.getAccounts();
 
-  for (let i = 0; i < foundAccounts.length; i++) {
-    var account = {
-      address: foundAccounts[i],
-      files: [],
-    };
-    accounts.push(account);
-  }
   for (let i = 0; i < 5; i++) {
-    selectAccountElement.options[i + 1].innerHTML = foundAccounts[i];
+    selectAccountElement.options[i + 1].innerHTML = accounts[i];
   }
-  chosenAccount = foundAccounts[0];
-  chosenAccountIndex = 0;
-  retrieveAllFilesFromIPFS();
 }
 
 main();
