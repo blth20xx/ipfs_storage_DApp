@@ -27,17 +27,12 @@ var chosenAccount = {
   files: [],
 };
 
-/* Declaración de los buffers de subida y descarga de archivos */
+/* Declaración del buffer de subida*/
 var uploadFiles = [];
-var retrievedFiles = [];
 
 /* Elementos de la interfaz de usuario */
 const chooseFileElement = document.getElementById("chooseFile");
 const submitFileElement = document.getElementById("submitFile");
-const getFileElement = document.getElementById("getFile");
-const wantedFileElement = document.getElementById("wantedFile");
-const file2DeleteElement = document.getElementById("file2Delete");
-const deleteFileElement = document.getElementById("deleteFile");
 const selectAccountElement = document.getElementById("select");
 
 /* Función para descargar el documento al equipo desde IPFS */
@@ -103,21 +98,23 @@ function prepareFiles() {
   var file = this.files[0];
 
   uploadFiles.push(file);
+  this.files[0] = null;
 }
 
 /* Función para añadir un fichero a una cuenta conforme se sube */
-function addFileToAccount() {
-  chosenAccount.files.push(uploadFiles[0]);
+function addFileToAccount(cid) {
+  chosenAccount.files.push({ cid: cid, name: uploadFiles[0].name });
 }
 
 /* Función encargada de subir el archivo al servicio IPFS y de guardar el identificador recibido en el smart contract
  Se activa con el botón "Submit" */
 async function putFileToIPFS() {
-  console.log("Submitting file to IPFS...");
+  alert("Submitting file to IPFS...");
   var cid = await storage.put(uploadFiles);
   for (let i = 0; i < chosenAccount.files.length; i++) {
     if (cid === chosenAccount.files[i].cid) {
       alert("ERROR: el archivo ya existe");
+      uploadFiles = [];
       throw new Error("El archivo ya existe");
     }
   }
@@ -125,15 +122,14 @@ async function putFileToIPFS() {
     .store(uploadFiles[0].name, cid)
     .send({ from: chosenAccount.address, gas: 500000 });
   alert("File submitted!");
-  addFileToAccount();
-  renderDataInTheTable(uploadFiles[0].name, cid);
+  addFileToAccount(cid);
+  renderDataInTheTable({ name: uploadFiles[0].name, cid: cid });
   uploadFiles = [];
 }
 
 /* Función encargada de recuperar el identificador de un fichero desde el smart contract para después descargarlo desde el sevicio IPFS
   Se activa con el botón "Get file" */
 async function retrieveFileFromIPFS(evt) {
-  console.log("Retrieving file...");
   downloadToSystem(evt.target.cid, evt.target.filename);
 }
 
@@ -142,7 +138,9 @@ async function retrieveAll() {
     .retrieveAll()
     .call({ from: chosenAccount.address, gas: 500000 });
 
-  return files;
+  for (let i = 0; i < files.length; i++) {
+    chosenAccount.files.push({ cid: files[i].cid, name: files[i].name });
+  }
 }
 
 /* Función para borrar el identificador de un fichero en el contrato */
@@ -170,15 +168,14 @@ async function changeAccount() {
 
   clearTable();
   chosenAccount.address = accounts[index];
-  chosenAccount.files = await retrieveAll();
+  chosenAccount.files = [];
+  await retrieveAll();
   renderFullTable();
 }
 
 /* Declaración de los listeners para cuando el usuario pulse cada uno de los botones */
 chooseFileElement.addEventListener("change", prepareFiles, false);
 submitFileElement.addEventListener("click", putFileToIPFS, false);
-getFileElement.addEventListener("click", retrieveFileFromIPFS, false);
-deleteFileElement.addEventListener("click", deleteFile, false);
 selectAccountElement.addEventListener("change", changeAccount, false);
 
 async function main() {
