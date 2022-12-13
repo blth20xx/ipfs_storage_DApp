@@ -31,26 +31,27 @@
       </select>
       </div>
       <br><br>
-      <div>
+      <div hidden="true" id="uploadDiv">
         <h3 style="color: black;">Subida de documentos</h3>
         <form>
-          <!-- <button onclick="document.getElementById('chooseFile').click()">Seleccionar documento</button> -->
           <input type="file" id="chooseFile" accept=".pdf, .doc, .docx"></input>
           <input type="button" id="submitFile" value="Submit"></input>
         </form>
       </div>
       <br><br>
-      <div>
-        <h3 style="color: black;">Descarga de documentos</h3>
-        <input type="text" id="wantedFile">
-        <button id="getFile">Get File</button>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th scope="col">Documento</th>
+              <th scope="col"></th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody id="docsTable"></tbody>
+        </table>
       </div>
-      <br><br>
-      <div>
-        <h3 style="color: black;">Borrar fichero</h3>
-        <input type="text" id="file2Delete">
-        <button id="deleteFile">Delete File</button>
-      </div>
+    </div>
+    <div class="container">
     </div>
 
   </body>
