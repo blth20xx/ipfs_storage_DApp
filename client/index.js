@@ -36,7 +36,7 @@ const submitFileElement = document.getElementById("submitFile");
 const selectAccountElement = document.getElementById("select");
 
 /* Función para descargar el documento al equipo desde IPFS */
-function downloadToSystem(cid, filename) {
+function retrieveFileFromIPFS(cid, filename) {
   if (cid == "") {
     throw new Error(`No se ha podido obtener el archivo ${filename}`);
   }
@@ -52,27 +52,18 @@ function renderDataInTheTable(file) {
   let nameCell = document.createElement("td");
   let dwCell = document.createElement("td");
   let dwButton = document.createElement("button");
-  /* let rmCell = document.createElement("td");
-  let rmButton = document.createElement("button"); */
 
   nameCell.innerText = file.name;
 
   dwButton.innerHTML = "Get File";
   dwButton.className = "btn btn-outline-success";
-  dwButton.addEventListener("click", retrieveFileFromIPFS, false);
+  dwButton.addEventListener("click", downloadToSystem, false);
   dwButton.cid = file.cid;
   dwButton.filename = file.name;
   dwCell.appendChild(dwButton);
 
-  /* rmButton.innerHTML = "Delete File";
-  rmButton.className = "btn btn-outline-danger";
-  rmButton.addEventListener("click", deleteFile, false);
-  rmButton.value = nameCell.innerText;
-  rmCell.appendChild(rmButton); */
-
   newRow.appendChild(nameCell);
   newRow.appendChild(dwCell);
-  //newRow.appendChild(rmCell);
   tableBody.appendChild(newRow);
 }
 
@@ -129,8 +120,8 @@ async function putFileToIPFS() {
 
 /* Función encargada de recuperar el identificador de un fichero desde el smart contract para después descargarlo desde el sevicio IPFS
   Se activa con el botón "Get file" */
-async function retrieveFileFromIPFS(evt) {
-  downloadToSystem(evt.target.cid, evt.target.filename);
+async function downloadToSystem(evt) {
+  retrieveFileFromIPFS(evt.target.cid, evt.target.filename);
 }
 
 async function retrieveAll() {
@@ -142,17 +133,6 @@ async function retrieveAll() {
     chosenAccount.files.push({ cid: files[i].cid, name: files[i].name });
   }
 }
-
-/* Función para borrar el identificador de un fichero en el contrato */
-/* async function deleteFile(evt) {
-  await contract.methods
-    .clear(evt.target.value)
-    .send({ from: chosenAccount, gas: 500000 });
-  console.log(`${evt.target.value}'s cid deleted from contract`);
-  let index = chosenAccount.files.indexOf(evt.target.value);
-  document.getElementById("docsTable").deleteRow(index);
-  chosenAccount.files.splice(index, 1);
-} */
 
 /* Cambia la cuenta activa cuando se selecciona otra distinta en el selector */
 async function changeAccount() {
