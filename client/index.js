@@ -111,7 +111,11 @@ async function putFileToIPFS() {
   }
   await contract.methods
     .store(uploadFiles[0].name, cid)
-    .send({ from: chosenAccount.address, gas: 500000 });
+    .send({ from: chosenAccount.address, gas: 500000 })
+    .on("error", function (error) {
+      alert("ETH insuficiente");
+      throw new Error("ETH insuficiente");
+    });
   alert("File submitted!");
   addFileToAccount(cid);
   renderDataInTheTable({ name: uploadFiles[0].name, cid: cid });
