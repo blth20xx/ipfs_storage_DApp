@@ -13,13 +13,10 @@ const storage = new Web3Storage({ token });
 const CONTRACT_ADDRESS = "0xa856b89dd4c7c45339e14fd857511021f22c83a5";
 const CONTRACT_ABI = contractConfiguration.abi;
 
-/* Se instancia la API de web3 para poder trabajar con ella */
-//const provider = new Web3.providers.HttpProvider("http://localhost:7545");
-//const web3 = new Web3(provider);
+/* Variable global para instanciar después web3js*/
 let web3;
 
-/* Instanciación del contrato con sus parámetros de conexión */
-//const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+/* Variable global para instanciar después el contrato */
 let contract;
 
 /* Variables para guardar las cuentas disponibles en la blockchain */
@@ -38,7 +35,6 @@ const selectAccountElement = document.getElementById("select");
 const tableElement = document.getElementById("table");
 const selectDivElement = document.getElementById("selectDiv");
 const enableEthereumElement = document.getElementById("enableEthereum");
-const plate = document.getElementById("plate");
 
 /* Función para descargar el documento al equipo desde IPFS */
 function retrieveFileFromIPFS(cid, filename) {
@@ -145,40 +141,31 @@ async function retrieveAll() {
 
 /* Cambia la cuenta activa cuando se selecciona otra distinta en el selector */
 async function changeAccount() {
-  var index = selectAccountElement.selectedIndex;
-
-  if (document.getElementById("uploadDiv").hidden) {
-    selectAccountElement.remove(0);
-    document.getElementById("uploadDiv").hidden = false;
-    if (index > 0) {
-      index--;
-    }
-  }
-
-  selectAccountElement.options[0].innerHTML = chosenAccount.address;
-  plate.innerHTML = chosenAccount.address;
-  console.log("Cuenta cambiada");
+  document.getElementById("uploadDiv").hidden = false;
+  selectAccountElement.value = chosenAccount.address;
   clearTable();
   chosenAccount.files = [];
   await retrieveAll();
   renderFullTable();
 }
 
+/* Declaración del evento de cambio de cuenta en MetaMask para cambiar la cuenta en la interfaz */
 ethereum.on("accountsChanged", (accounts) => {
   chosenAccount.address = accounts[0];
   changeAccount();
 });
 
+/* Función encargada de activar MetaMask y la interfaz al pulsar el boton de Log In */
 function activate() {
   enableEthereumElement.hidden = true;
   ethereum.request({ method: "eth_requestAccounts" }).then((accounts) => {
+    web3 = new Web3(window.ethereum);
+    contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     chosenAccount.address = accounts[0];
-    selectAccountElement.options[1].innerHTML = chosenAccount.address;
+    changeAccount();
     selectDivElement.hidden = false;
     selectAccountElement.hidden = false;
     tableElement.hidden = false;
-    web3 = new Web3(window.ethereum);
-    contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
   });
 }
 
@@ -187,12 +174,3 @@ chooseFileElement.addEventListener("change", prepareFiles, false);
 submitFileElement.addEventListener("click", putFileToIPFS, false);
 selectAccountElement.addEventListener("change", changeAccount, false);
 enableEthereumElement.addEventListener("click", activate, false);
-
-/* function main() {
-  setTimeout(function () {
-    
-    
-  }, 2000);
-} */
-
-//main();
