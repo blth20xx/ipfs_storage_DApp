@@ -10,18 +10,19 @@ const token =
 const storage = new Web3Storage({ token });
 
 /* Conexión con el despliegue del contrato */
-const CONTRACT_ADDRESS = contractConfiguration.networks["5777"].address;
+const CONTRACT_ADDRESS = "0xa856b89dd4c7c45339e14fd857511021f22c83a5";
 const CONTRACT_ABI = contractConfiguration.abi;
 
 /* Se instancia la API de web3 para poder trabajar con ella */
-const provider = new Web3.providers.HttpProvider("http://localhost:7545");
-const web3 = new Web3(provider);
+//const provider = new Web3.providers.HttpProvider("http://localhost:7545");
+//const web3 = new Web3(provider);
+let web3;
 
 /* Instanciación del contrato con sus parámetros de conexión */
-const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+//const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+let contract;
 
 /* Variables para guardar las cuentas disponibles en la blockchain */
-var accounts = [];
 var chosenAccount = {
   address: "",
   files: [],
@@ -34,6 +35,10 @@ var uploadFiles = [];
 const chooseFileElement = document.getElementById("chooseFile");
 const submitFileElement = document.getElementById("submitFile");
 const selectAccountElement = document.getElementById("select");
+const tableElement = document.getElementById("table");
+const selectDivElement = document.getElementById("selectDiv");
+const enableEthereumElement = document.getElementById("enableEthereum");
+const plate = document.getElementById("plate");
 
 /* Función para descargar el documento al equipo desde IPFS */
 function retrieveFileFromIPFS(cid, filename) {
@@ -150,24 +155,44 @@ async function changeAccount() {
     }
   }
 
+  selectAccountElement.options[0].innerHTML = chosenAccount.address;
+  plate.innerHTML = chosenAccount.address;
+  console.log("Cuenta cambiada");
   clearTable();
-  chosenAccount.address = accounts[index];
   chosenAccount.files = [];
   await retrieveAll();
   renderFullTable();
+}
+
+ethereum.on("accountsChanged", (accounts) => {
+  chosenAccount.address = accounts[0];
+  changeAccount();
+});
+
+function activate() {
+  enableEthereumElement.hidden = true;
+  ethereum.request({ method: "eth_requestAccounts" }).then((accounts) => {
+    chosenAccount.address = accounts[0];
+    selectAccountElement.options[1].innerHTML = chosenAccount.address;
+    selectDivElement.hidden = false;
+    selectAccountElement.hidden = false;
+    tableElement.hidden = false;
+    web3 = new Web3(window.ethereum);
+    contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+  });
 }
 
 /* Declaración de los listeners para cuando el usuario pulse cada uno de los botones */
 chooseFileElement.addEventListener("change", prepareFiles, false);
 submitFileElement.addEventListener("click", putFileToIPFS, false);
 selectAccountElement.addEventListener("change", changeAccount, false);
+enableEthereumElement.addEventListener("click", activate, false);
 
-async function main() {
-  accounts = await web3.eth.getAccounts();
+/* function main() {
+  setTimeout(function () {
+    
+    
+  }, 2000);
+} */
 
-  for (let i = 0; i < 5; i++) {
-    selectAccountElement.options[i + 1].innerHTML = accounts[i];
-  }
-}
-
-main();
+//main();
