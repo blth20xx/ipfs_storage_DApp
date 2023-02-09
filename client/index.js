@@ -141,7 +141,9 @@ async function retrieveAll() {
 
 /* Cambia la cuenta activa cuando se selecciona otra distinta en el selector */
 async function changeAccount() {
-  document.getElementById("uploadDiv").hidden = false;
+  if (document.getElementById("uploadDiv").hidden) {
+    document.getElementById("uploadDiv").hidden = false;
+  }
   selectAccountElement.value = chosenAccount.address;
   clearTable();
   chosenAccount.files = [];
@@ -172,5 +174,4 @@ function activate() {
 /* Declaración de los listeners para cuando el usuario pulse cada uno de los botones */
 chooseFileElement.addEventListener("change", prepareFiles, false);
 submitFileElement.addEventListener("click", putFileToIPFS, false);
-selectAccountElement.addEventListener("change", changeAccount, false);
 enableEthereumElement.addEventListener("click", activate, false);
